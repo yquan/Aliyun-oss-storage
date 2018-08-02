@@ -449,13 +449,18 @@ class AliOssAdapter extends AbstractAdapter
     public function readStream($path)
     {
         $result = $this->readObject($path);
-        $result['stream'] = fopen($this->getUrl($path), 'r');
-//        $result['stream'] = $result['raw_contents'];
-//        rewind($result['stream']);
+        if (gettype($result['raw_contents']) === 'string') {
+            $resource = fopen('php://temp', 'r+');
+            fwrite($resource, $result['raw_contents']);
+            $result['raw_contents'] = $resource;
+        }
+        $result['stream'] = $result['raw_contents'];
+        rewind($result['stream']);
         // Ensure the EntityBody object destruction doesn't close the stream
 //        $result['raw_contents']->detachStream();
+        if (gettype($result['raw_contents']) !== 'resource')
+            $result['raw_contents']->detachStream();
         unset($result['raw_contents']);
-
         return $result;
     }
 
@@ -568,7 +573,7 @@ class AliOssAdapter extends AbstractAdapter
      */
     public function getUrl( $path )
     {
-        if (!$this->has($path)) throw new FileNotFoundException($filePath.' not found');
+        if (!$this->has($path)) throw new FileNotFoundException($path.' not found');
         return ( $this->ssl ? 'https://' : 'http://' ) . ( $this->isCname ? ( $this->cdnDomain == '' ? $this->endPoint : $this->cdnDomain ) : $this->bucket . '.' . $this->endPoint ) . '/' . ltrim($path, '/');
     }
 
