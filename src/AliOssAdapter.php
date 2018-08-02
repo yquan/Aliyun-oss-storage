@@ -67,7 +67,7 @@ class AliOssAdapter extends AbstractAdapter
     protected $bucket;
 
     protected $endPoint;
-    
+
     protected $cdnDomain;
 
     protected $ssl;
@@ -449,10 +449,11 @@ class AliOssAdapter extends AbstractAdapter
     public function readStream($path)
     {
         $result = $this->readObject($path);
-        $result['stream'] = $result['raw_contents'];
-        rewind($result['stream']);
+        $result['stream'] = fopen($this->getUrl($path), 'r');
+//        $result['stream'] = $result['raw_contents'];
+//        rewind($result['stream']);
         // Ensure the EntityBody object destruction doesn't close the stream
-        $result['raw_contents']->detachStream();
+//        $result['raw_contents']->detachStream();
         unset($result['raw_contents']);
 
         return $result;
@@ -549,7 +550,7 @@ class AliOssAdapter extends AbstractAdapter
             $this->logErr(__FUNCTION__, $e);
             return false;
         }
-        
+
         if ($acl == OssClient::OSS_ACL_TYPE_PUBLIC_READ ){
             $res['visibility'] = AdapterInterface::VISIBILITY_PUBLIC;
         }else{
@@ -608,7 +609,7 @@ class AliOssAdapter extends AbstractAdapter
 
             return $result;
         }
-        
+
         $result = array_merge($result, Util::map($object, static::$resultMap), ['type' => 'file']);
 
         return $result;
